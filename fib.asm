@@ -24,13 +24,13 @@ l1:
 
 mov dx, si
 add dx, bx
-mov bx, si
-mov ax, dx
-mov si, dx
+mov bx, si      ; Earlier fibonacci
+mov ax, dx      ; Current fibonacci
+mov si, dx      
 mov dx, '$'     ; For the end of stack
 push dx
 
-l2:
+l2:             ; For pushing of each element inside stack
 
 mov dx, 0
 mov cx, 10
@@ -40,7 +40,7 @@ cmp ax, 0
 
 jg l2
 
-l3:
+l3:             ; For printing each fibonacci
 
 pop dx
 cmp dx, '$'
@@ -53,7 +53,7 @@ jmp l3
 
 l4:
 
-sub n, 1
+sub n, 1       ; Count variable needed to check how many traversals we need to do
 cmp n, 0
 jle l5
 
