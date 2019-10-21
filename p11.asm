@@ -19,8 +19,8 @@ mov ah, 1
 int 21h
 mov b, al
 
-add al, a
 mov ah, 0
+add al, a
 aaa
 
 add al, 48
