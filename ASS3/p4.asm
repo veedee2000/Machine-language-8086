@@ -1,71 +1,76 @@
-.MODEL small
-.STACK 100h
+.MODEL SMALL
+.STACK 100H
 .DATA
-	LEN 	db "LENGTH: $"
-	PAR 	db "PARAMS: $"
-	param 	db 30 dup(?)
-	NL		db 10, 13, '$'
+	LF EQU 0AH
+	CR EQU 0DH
+	LEN DB "LENGTH:",LF,CR,"$"
+	ARG DB " ",LF,CR,"ARGUEMENTS ARE: ","$"
+	L DW 0  ; A VARIABLE STORING LENGTH
+	BASE DW 10
 .CODE
 MAIN PROC
-	MOV bx, 80h					; length of CMD stored at PSP
-	MOV cl, [bx]				; moving it to cl
-	
-	MOV ax, @data
-	MOV ds, ax
+;PSP - PROGRAM SEGMENT PREFIX
+MOV BX,80H   ; AT 80H OFFSET THE LENGTH OF THE COMMAND LINE IS STORED
+MOV CL,[BX]  ; LENGTH IS STORED IN CL
+MOV CH,0
 
-	LEA dx, LEN					; printing length msg
-	MOV ah, 09h
-	INT 21h
+MOV AX,@DATA
+MOV DS,AX   
 
-	MOV ax, 0
-	MOV al, cl
-	MOV ch, 10
-	MOV dx, '$'
-	PUSH dx
-	JMP PRINT_PUSH				; printing length
+LEA DX,LEN  
+MOV AH,09H
+INT 21H 
 
-	PARAMETERS:
-		LEA dx, NL				; printing new line
-		MOV ah, 09h
-		INT 21h
+MOV DX,'$'
+PUSH DX
 
-		LEA dx, PAR				; printing parameters msg
-		MOV ah, 09h
-		INT 21h
+MOV DX,0
+MOV AX,0
+MOV AL,CL  
+MOV L,AX  
 
-		MOV ah, 62h				; loading Program Segment Prefix on bx
-		INT 21h
+PUSH_DATA:   ;PRINTING THE LENGTH OF THE ARGUEMENT
+	CMP AX,0
+	JE PRINT
+	DIV BASE
+	PUSH DX
+	MOV DX,0
+	JMP PUSH_DATA
 
-		MOV ds, bx				; setting ds as PSP
-		MOV dx, 81h				; cmdline params starting from 81h, including space
-		MOV bx, dx
-		ADD bl, cl
-		MOV BYTE PTR[bx], '$'	; putting '$' at the end of the cmdline param in the memory
-		MOV ah, 09h				; printing from 81h to where the '$' is present, i.e., end of cmdline params
-		INT 21h
-		JMP EXIT				; EXIT
+PRINT:
+	POP DX
+	CMP DX,'$'
+	JE ARGUE
+	ADD DX,48
+	MOV AH,02H
+	INT 21H
+	JMP PRINT
 
-	PRINT_PUSH:
-		CMP al, 0
-		JE PRINT_POP
-		MOV dx, 0
-		MOV ah, 0
-		DIV ch
-		MOV dl, ah
-		PUSH dx
-		JMP PRINT_PUSH
+ARGUE:
+LEA DX,ARG
+MOV AH,09H
+INT 21H
 
-	PRINT_POP:
-		POP dx
-		CMP dl, '$'
-		JE PARAMETERS
-		ADD dl, 48
-		MOV ah, 02h
-		INT 21h
-		JMP PRINT_POP
+MOV AH,62H
+INT 21H
+MOV DS,BX ; LOADING THE PSP TO BX
 
-	EXIT:
-		MOV ah, 4ch
-		INT 21h
+MOV CH,'$' 
+MOV AX,0
+MOV AL,CL  ; STORING THE LENGTH IN AX
+MOV DI,AX ; STORING THE LENGTH IN DI
+
+MOV AX,BX ; MOVING THE STARTING ADRESS OF PSP IN AX
+MOV BX,DI ; MOVING LENGTH IN BX
+MOV SI,81H ; SI HAS NOW THE STARTING ADRESS OF ARGUEMENT STRING 
+MOV DS:[BX+SI],CH ; TERMINATING THE STRING
+MOV DX,SI
+MOV AH,09H
+INT 21H
+
+EXIT:
+MOV AH,4CH 
+INT 21H
+
 MAIN ENDP
 END MAIN
